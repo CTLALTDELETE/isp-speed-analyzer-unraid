@@ -28,20 +28,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🏷️ Set Image Tag
+      - name: 🏷️ Define Image Name and Tags
         id: vars
-        run: echo "TAG=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_NAME=ghcr.io/${OWNER_LC}/isp-analyzer
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+          echo "TAG=latest" >> $GITHUB_ENV
+          echo "BUILD_TAG=build-${{ github.run_number }}" >> $GITHUB_ENV
 
-      - name: 📦 Build and Push Docker Image
+      - name: 🧱 Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/isp-analyzer:latest
-            ghcr.io/${{ github.repository_owner }}/isp-analyzer:${{ github.run_number }}
+            ${{ env.IMAGE_NAME }}:${{ env.TAG }}
+            ${{ env.IMAGE_NAME }}:${{ env.BUILD_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: ✅ Confirm Push Success
-        run: echo "ISP Analyzer image has been built and pushed successfully!"
+        run: |
+          echo "✅ ISP Analyzer image built and pushed successfully!"
+          echo "📦 Image: ${{ env.IMAGE_NAME }}:${{ env.TAG }}"
+          echo "📦 Image: ${{ env.IMAGE_NAME }}:${{ env.BUILD_TAG }}"
